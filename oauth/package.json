@@ -1,0 +1,8 @@
+{
+  "name": "autocutpr-oauth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": { "openai-oauth": "2.0.0" }
+}

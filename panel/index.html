@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>AutoCutPR</title>
+  <link rel="stylesheet" href="css/panel.css" />
+</head>
+<body>
+  <nav class="workflow-tabs" aria-label="Workflow">
+    <button id="workflowReels" class="current" aria-pressed="true">Reels</button>
+    <button id="workflowEpisode" aria-pressed="false">Full Episode</button>
+  </nav>
+  <div class="app" id="reelsWorkflow">
+
+    <nav class="rail" id="rail">
+      <button class="rail-step" data-step="source"><i></i><span>1</span><em>Source</em></button>
+      <button class="rail-step" data-step="find"><i></i><span>2</span><em>Find</em></button>
+      <button class="rail-step" data-step="review"><i></i><span>3</span><em>Review</em></button>
+      <button class="rail-step" data-step="build"><i></i><span>4</span><em>Build</em></button>
+      <button class="rail-step" data-step="export"><i></i><span>5</span><em>Export</em></button>
+      <button class="rail-step" data-step="trailer"><i></i><span>6</span><em>Trailer</em></button>
+    </nav>
+
+    <main class="work">
+
+      <!-- 1 ................................................. source -->
+      <section class="step" data-step="source">
+        <header>
+          <h1>Source</h1>
+          <p>The episode this panel reads. Everything else follows from it.</p>
+        </header>
+
+        <div class="field">
+          <label for="mediaPath">Episode media</label>
+          <div class="row">
+            <input type="text" id="mediaPath" placeholder="pick the episode master" />
+            <button id="btnSelected" class="ghost">From project</button>
+            <button id="btnBrowse" class="ghost">Browse</button>
+          </div>
+          <p class="hint">Use the same file the reel timecodes refer to. Audio is read from
+            it directly, so a multi-GB master is fine.</p>
+        </div>
+
+        <div class="field">
+          <label>Preparation</label>
+          <ul class="checklist" id="prepList">
+            <li data-key="transcript"><i></i><span>Transcript</span><em>not started</em></li>
+            <li data-key="waveform"><i></i><span>Waveform scan</span><em>not started</em></li>
+            <li data-key="speakers"><i></i><span>Speakers</span><em>not started</em></li>
+          </ul>
+          <p class="hint">Each is cached per episode. They run once, then reruns are instant.</p>
+        </div>
+
+        <div class="field" id="speakerBox" hidden>
+          <label>Who is the host</label>
+          <div class="speakers" id="speakers"></div>
+          <p class="hint" id="speakerHint"></p>
+        </div>
+
+        <div class="actions">
+          <button id="btnPrepare" class="primary">Prepare episode</button>
+        </div>
+      </section>
+
+      <!-- 2 ................................................... find -->
+      <section class="step" data-step="find">
+        <header>
+          <h1>Find moments</h1>
+          <p>Let the panel read the episode, or paste a list you were sent.</p>
+        </header>
+
+        <div class="seg" id="findMode">
+          <button data-mode="auto" class="on">Find them for me</button>
+          <button data-mode="list">I have a list</button>
+        </div>
+
+        <div id="modeAuto">
+          <div class="field">
+            <label>How many reels</label>
+            <div class="row tight">
+              <input type="number" id="minCount" value="8" min="1" max="40" />
+              <span class="between">to</span>
+              <input type="number" id="maxCount" value="12" min="1" max="40" />
+            </div>
+            <p class="hint">The minimum is always met. Above it, only moments that are still
+              clearly good are added, so the maximum is a ceiling and not a quota.</p>
+          </div>
+
+          <div class="field">
+            <label>Reel length</label>
+            <div class="row tight">
+              <input type="number" id="minLen" value="20" /><span class="between">to</span>
+              <input type="number" id="maxLen" value="90" /><span class="between">s, aim</span>
+              <input type="number" id="targetLen" value="45" /><span class="between">s</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Who talks</label>
+            <label class="check"><input type="checkbox" id="guestOnly" checked />
+              <span>Guest carries the moment</span></label>
+            <label class="check"><input type="checkbox" id="allowMixed" />
+              <span>Allow host and guest intertwined</span></label>
+            <div class="row tight" id="hostLimitRow">
+              <span class="between">Host may speak up to</span>
+              <input type="number" id="hostMax" value="5" /><span class="between">s</span>
+            </div>
+            <p class="hint">Needs speakers detected in step 1. Intertwined keeps exchanges
+              where the back and forth is the point.</p>
+          </div>
+
+          <div class="actions">
+            <button id="btnDiscover" class="primary">Find moments</button>
+          </div>
+        </div>
+
+        <div id="modeList" hidden>
+          <div class="field">
+            <label for="reelText">Reel list</label>
+            <textarea id="reelText" rows="9"
+              placeholder="3:38 o parte din rău .... 6:21 este dispreț"></textarea>
+            <p class="hint">Paste it exactly as received. Mistyped timecodes (05;39, 41:031,
+              a bare 45) and notes in brackets are handled.</p>
+          </div>
+          <div class="actions">
+            <button id="btnAnalyze" class="primary">Read the list</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 ................................................. review -->
+      <section class="step" data-step="review">
+        <header>
+          <h1>Review</h1>
+          <p>Nothing is built until you keep it.</p>
+        </header>
+        <div class="summary" id="reviewSummary"></div>
+        <div id="moments" class="moments"></div>
+        <div class="actions">
+          <button id="btnToBuild" class="primary">Continue with kept reels</button>
+        </div>
+      </section>
+
+      <!-- 4 .................................................. build -->
+      <section class="step" data-step="build">
+        <header>
+          <h1>Build</h1>
+          <p>Cut on the timeline, then one 9:16 sequence per reel.</p>
+        </header>
+
+        <div class="field">
+          <label>Timeline offset</label>
+          <div class="row">
+            <select id="offsetMode">
+              <option value="auto">Detect from sequence</option>
+              <option value="manual">Set manually</option>
+            </select>
+            <input type="text" id="manualOffset" value="0" disabled />
+          </div>
+          <p class="hint">Reel times come from the master audio; your edit usually starts
+            later. Detection finds the master on the timeline and measures the shift.</p>
+        </div>
+
+        <div class="field">
+          <label>Framing</label>
+          <div class="row">
+            <select id="framingMode">
+              <option value="autoreframe">Auto Reframe</option>
+              <option value="fill">Fill and centre</option>
+            </select>
+            <span class="between">x</span>
+            <input type="text" id="frameX" value="0.44" />
+          </div>
+          <p class="hint">Lower x moves the subject left. The speaker is rarely centred in a
+            wide shot, so 0.5 leaves them off to one side.</p>
+        </div>
+
+        <div class="field">
+          <label>Logo</label>
+          <div class="row">
+            <input type="text" id="logoPath" placeholder="optional" />
+            <button id="btnLogo" class="ghost">Browse</button>
+          </div>
+          <div class="row tight">
+            <span class="between">width</span><input type="text" id="logoWidthPct" value="27" />
+            <span class="between">% x</span><input type="text" id="logoX" value="0.49" />
+            <span class="between">y</span><input type="text" id="logoY" value="0.735" />
+          </div>
+          <p class="hint" id="logoInfo">Measured from its alpha, so the size is real pixels
+            and not a guess.</p>
+        </div>
+
+        <div class="field">
+          <label>Music</label>
+          <div class="row">
+            <input type="text" id="songsPath" placeholder="optional, a folder of instrumentals" />
+            <button id="btnSongs" class="ghost">Browse</button>
+          </div>
+          <p class="hint">One song per reel, chosen from the filenames and what the reel is
+            about. Every bed is normalised to -16 dBFS and cut to length.</p>
+        </div>
+
+        <div class="field">
+          <label>Dead air</label>
+          <div class="row">
+            <select id="silenceMode">
+              <option value="moderate" selected>Moderate</option>
+              <option value="conservative">Conservative</option>
+              <option value="aggressive">Aggressive</option>
+              <option value="off">Leave it in</option>
+            </select>
+            <select id="silenceDetect">
+              <option value="hybrid" selected>Waveform + speech</option>
+              <option value="db">Waveform only</option>
+              <option value="words">Speech only</option>
+            </select>
+          </div>
+          <label class="check"><input type="checkbox" id="keepDramatic" checked />
+            <span>Keep deliberate pauses</span></label>
+          <p class="hint">Waveform gives exact boundaries, speech says what is meaningful.
+            Using both avoids clipping quiet word onsets.</p>
+        </div>
+
+        <div class="actions">
+          <label class="check inline"><input type="checkbox" id="alsoCutTimeline" checked />
+            <span>Also razor and mark the master timeline</span></label>
+          <label class="check inline"><input type="checkbox" id="onlyFirst" />
+            <span>First reel only</span></label>
+          <button id="btnDiag" class="ghost">Diagnostics</button>
+          <button id="btnBuild" class="primary">Build reels</button>
+        </div>
+      </section>
+
+      <!-- 5 ................................................. export -->
+      <section class="step" data-step="export">
+        <header>
+          <h1>Export</h1>
+          <p>Premiere renders these itself, so it will be busy until the batch finishes.</p>
+        </header>
+
+        <div class="field">
+          <label for="exportName">Name</label>
+          <input type="text" id="exportName" placeholder="Episode name" />
+          <p class="hint" id="exportHint">Files are numbered 001, 002, and so on.</p>
+        </div>
+
+        <div class="field">
+          <label for="exportDir">Folder</label>
+          <div class="row">
+            <input type="text" id="exportDir" placeholder="where the files go" />
+            <button id="btnExportDir" class="ghost">Browse</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Bitrate ceiling</label>
+          <div class="row tight">
+            <input type="number" id="exportMbps" value="10" /><span class="between">Mbps</span>
+          </div>
+          <p class="hint">H.264, VBR, following the sequence for size and frame rate.</p>
+        </div>
+
+        <div class="actions">
+          <button id="btnExport" class="primary">Export reels</button>
+        </div>
+      </section>
+
+      <!-- 6 ................................................ trailer -->
+      <section class="step" data-step="trailer">
+        <header>
+          <h1>Trailer</h1>
+          <p>Five candidates and three ways to order them. Recommendations only.</p>
+        </header>
+        <div class="actions">
+          <button id="btnTrailer" class="primary">Suggest a trailer</button>
+        </div>
+        <div id="trailerOut"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <main id="episodeWorkflow" class="episode-work" hidden>
+    <header><h1>Full Episode</h1><p>Prepare the main edit from your synchronized V1 and V2. Review placements, then build a separate sequence.</p></header>
+    <fieldset id="epSettings">
+      <legend>Show and timeline</legend>
+      <div class="field"><label for="epShow">Podcast</label><select id="epShow"><option value="CPI">Ce ai în plan</option><option value="AIP">Arena Ideilor</option></select></div>
+      <button id="epCapture" class="ghost">Read selected prim-plan and timeline</button>
+      <p id="epTimeline" class="hint">Select the prim-plan source in the Project panel. Open the sequence with your manually synced general camera on V2.</p>
+      <div class="field"><label><input type="checkbox" id="epGeneral" checked> General camera: 10 seconds about every 5 minutes</label><p class="hint">Uses the existing V2 sync. Saturation 114. The original sequence stays intact.</p></div>
+      <div class="field" id="epBlacksField" hidden><label for="epBlacks">General camera Blacks: <output id="epBlacksValue">0</output></label><input id="epBlacks" type="range" min="-100" max="100" step="1" value="0"></div>
+      <details id="epColor"><summary>One-time Premiere color calibration</summary><p class="hint">Required before the first build with general-camera inserts. Uses a separate calibration copy. Repeat after a Premiere update.</p><button id="epColorClone" class="ghost">Create calibration copy</button><p id="epColorHelp" class="hint">On its first V2 clip, add Lumetri Color. Set Basic Correction Saturation 100 and Blacks 0, then capture.</p><button id="epColorCapture" class="ghost" disabled>Capture color values</button><p id="epColorStatus" class="hint"></p></details>
+      <h2>Optional graphics</h2>
+      <label><input id="epAllOff" type="checkbox"> All overlays off</label>
+      <div id="epGraphics"></div>
+      <div class="field" id="epCueField"><label for="epCue">Opening sponsor cue (timeline seconds, optional)</label><input id="epCue" type="number" min="0" step="0.01" placeholder="Find it in the first two minutes"><p class="hint">CPI: four sponsor placements total. Opening Like & Subscribe follows the first sponsor. AIP: opening Like & Subscribe around 30 seconds.</p></div>
+    </fieldset>
+    <div class="actions"><button id="epAnalyze" class="primary" disabled>Analyze episode</button><button id="epCancel" class="ghost" hidden>Cancel</button></div>
+    <p id="epStatus" role="status" aria-live="polite" class="hint">Ready when the synchronized sequence is open.</p>
+    <section id="epPlayback" hidden><h2 id="epPlaybackTitle">Source playback</h2><div class="episode-player"><video id="epSourceVideo" controls preload="metadata"></video><video id="epOverlayVideo" muted preload="metadata" hidden></video></div><p class="hint">Source preview follows your timeline sync. The original V2 does not hide the host here. Check Premiere framing and color on the built copy.</p></section>
+    <section id="epLabels" hidden>
+      <h2>Host views and speaker</h2><p class="hint">Label camera shots that keep the host visible throughout. Play any uncertain shot in Premiere. Camera/background proposals always need confirmation.</p>
+      <div class="field"><label for="epSpeaker">Confirmed host speaker</label><select id="epSpeaker"><option value="">Choose the host</option></select><button id="epSpeakerSeek" class="ghost">Listen to selected speaker</button></div>
+      <details><summary>Find similar camera backgrounds</summary><p class="hint">On one labelled host thumbnail, drag a rectangle over fixed scenery that excludes every person. Confirm it below, then propose similar views. This matches scenery, not faces.</p><label><input id="epBackgroundOnly" type="checkbox"> My reference rectangles contain background only</label><button id="epPropose" class="ghost">Propose similar views</button></details>
+      <div id="epShots" class="episode-shots"></div>
+    </section>
+    <section id="epAssetReview" hidden><h2>Animation previews</h2><p class="hint">Checkerboard shows transparency. Animation audio is omitted. Like & Subscribe uses 50% of native size.</p><div id="epAssetPreviews"></div></section>
+    <div class="actions"><button id="epPlan" class="primary" disabled>Create placements</button></div>
+    <section id="epReview" hidden><h2>Placement review</h2><p class="hint">Play each entire interval before marking it reviewed. Times are sequence-relative seconds. Moves must still fit the complete shot and speaking turn.</p><div id="epWarnings" role="status"></div><div id="epEvents"></div><label id="epReducedLabel" hidden><input id="epReduced" type="checkbox"> Build with fewer than four sponsor placements</label><div class="actions"><button id="epBuild" class="primary">Build Full Episode copy</button></div><p id="epResult" class="hint"></p></section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status"></span>
+    <button id="btnLog" class="ghost tiny">Log</button>
+  </footer>
+  <pre id="log" hidden></pre>
+
+  <script src="js/CSInterface.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/episode.js"></script>
+</body>
+</html>

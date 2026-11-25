@@ -1,0 +1,8 @@
+# Isolated video environment only; do not install into the working speech environment.
+numpy==2.2.6
+opencv-python-headless==4.12.0.88
+scenedetect==0.6.7.1
+click==8.2.1
+platformdirs==4.11.12
+tqdm==4.70.1
+colorama==0.4.6

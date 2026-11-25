@@ -1,0 +1,53 @@
+# Secrets. engine/.env holds the ollama API key; .env.example is the template.
+engine/.env
+.env
+
+# Source media and client reel lists left in the project root during testing.
+# Episode audio is client material and far past GitHub's file size limit.
+*.mp3
+*.wav
+*.WAV
+*.mp4
+*.mov
+reel *.txt
+
+# Episode data: transcripts, waveform scans, speaker turns and embeddings.
+# This is client material and it is large. Everything here regenerates from the
+# source media.
+cache/
+
+# Diarization models, ~107 MB, fetched by engine/models.py on first run.
+models/
+
+# Local archives and generated preview images.
+backups/
+previews/
+
+# Generated export presets (engine/preset.py rebuilds them per export).
+presets/
+
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.episode-venv/
+Thumbs.db
+desktop.ini
+
+# Local configuration and production files.
+panel/config.json
+.env.*
+!.env.example
+*.prproj
+*.mxf
+*.m4a
+*.aac
+*.flac
+*.srt
+*.vtt
+*.npy
+*.pem
+*.key
+*.pfx
+*.log
+engine/frame.png
